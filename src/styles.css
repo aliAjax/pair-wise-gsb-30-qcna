@@ -83,9 +83,20 @@ h1 {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
+}
+
+.metric-accent {
+  background: #f2f8fb;
+  border-color: #bcdce8;
+}
+
+.metric small {
+  display: block;
+  margin-top: 4px;
+  color: #69758c;
 }
 
 .metric {
@@ -251,10 +262,321 @@ textarea {
   padding: 32px 12px;
 }
 
+.board-panel {
+  margin-bottom: 18px;
+}
+
+.slot-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.slot-picker input, .slot-picker select {
+  width: auto;
+}
+
+.board-hint, .form-hint, .form-recover, .draft-banner {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #5b667a;
+}
+
+.form-recover, .draft-banner {
+  background: #fff6e6;
+  border: 1px solid #f0d5a3;
+  color: #8a5a12;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.truck-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.truck-card {
+  border: 1px solid #dfe7f1;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.truck-card.truck-full {
+  border-color: #e5b3a6;
+  background: #fdf5f2;
+}
+
+.truck-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.truck-name {
+  margin: 0;
+  font-weight: 800;
+}
+
+.truck-fuels {
+  font-size: 12px;
+  color: #69758c;
+}
+
+.capacity-line {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin: 10px 0 6px;
+  font-size: 13px;
+  color: #5b667a;
+}
+
+.capacity-line strong { font-size: 20px; color: #172033; }
+.capacity-line em { margin-left: auto; font-style: normal; color: #176b87; font-weight: 700; }
+
+.occ-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: #5b667a;
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-left: 6px;
+}
+.dot-reserve { background: #d99a2b; }
+.dot-occupy { background: #176b87; }
+
+.occ-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.occ-list li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.occ-tag {
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  color: #fff;
+  white-space: nowrap;
+}
+.tag-reserve { background: #d99a2b; }
+.tag-occupy { background: #176b87; }
+
+.occ-order {
+  color: #9aa5b8;
+  font-style: normal;
+  font-size: 12px;
+}
+
+.occ-empty {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #8a94a6;
+}
+
+.bar-fill.overload {
+  background: linear-gradient(90deg, #c84b31, #e0826d);
+}
+
+/* 提示栈 */
+.notices {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid;
+  font-size: 14px;
+}
+
+.notice p { margin: 0; line-height: 1.6; }
+.notice-info { background: #eef5fb; border-color: #b9d6e8; color: #23506b; }
+.notice-warn { background: #fdf1e7; border-color: #e5b38f; color: #8a4b12; }
+.notice-success { background: #ecf6f0; border-color: #a9d8c0; color: #14724f; }
+
+.notice-icon {
+  flex: 0 0 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 12px;
+  color: #fff;
+}
+.notice-info .notice-icon { background: #176b87; }
+.notice-warn .notice-icon { background: #c87a2b; }
+.notice-success .notice-icon { background: #14724f; }
+
+.notice-close {
+  margin-left: auto;
+  padding: 0 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.badge-migrated {
+  background: #eef0fb;
+  color: #434a8a;
+}
+
+/* 状态色 */
+.status.st-待派车 { background: #eef1f5; color: #536078; }
+.status.st-已预占 { background: #fdf1dc; color: #9a6410; }
+.status.st-装车中 { background: #e5f1fb; color: #145d89; }
+.status.st-运输中 { background: #e8f4ef; color: #14724f; }
+.status.st-已到站 { background: #eceef3; color: #445069; }
+.status.st-撤单 { background: #f3ecea; color: #8a4b38; }
+.status.st-在途失败 { background: #fbeae8; color: #a53623; }
+
+/* 派车草稿 */
+.draft-box {
+  border: 1px dashed #d99a2b;
+  background: #fffaf0;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0 0 12px;
+}
+
+.draft-title {
+  margin: 0 0 10px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #8a5a12;
+}
+.draft-title em { font-style: normal; font-weight: 400; color: #a08050; }
+
+.draft-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.draft-remaining {
+  margin: 10px 0;
+  font-size: 13px;
+  color: #5b667a;
+}
+.draft-remaining strong { color: #176b87; }
+
+.conflict-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.conflict-item {
+  background: #fbeae8;
+  border: 1px solid #e0b0a6;
+  color: #a53623;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.draft-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.occ-current {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.occ-chip {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #fff;
+}
+.chip-reserve { background: #d99a2b; }
+.chip-occupy { background: #176b87; }
+
+.events {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #5b667a;
+}
+.events summary { cursor: pointer; }
+.events ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.events time {
+  display: block;
+  color: #9aa5b8;
+  font-size: 12px;
+}
+
+@media (max-width: 980px) {
+  .truck-grid { grid-template-columns: 1fr; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 860px) {
   .app { padding: 18px; }
   .topbar, .workspace { grid-template-columns: 1fr; }
   .stack { justify-content: flex-start; }
   .metrics { grid-template-columns: 1fr; }
-  .details { grid-template-columns: 1fr; }
+  .details, .draft-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
 }
