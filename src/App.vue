@@ -1,197 +1,117 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
+import { useDispatchStore } from "./store";
+import { PHASE_WINDOWS, ORDER_STATUSES, type DayPhase, type FuelType, type OrderStatus } from "./types";
+import { activeAssignmentOf, isLive } from "./domain";
+import DispatchEditor from "./components/DispatchEditor.vue";
+import FleetPanel from "./components/FleetPanel.vue";
 
-type Field = {
-  key: string;
-  label: string;
-  type?: "number" | "date" | "select";
-  options?: readonly string[];
-};
+const store = useDispatchStore();
+onMounted(() => store.init());
 
-type RecordItem = {
-  id: string;
-  status: string;
-  notes: string;
-  createdAt: string;
-  [key: string]: string | number;
-};
+const stations = ["城东站", "机场站", "新区站"];
+const fuels: FuelType[] = ["92号汽油", "95号汽油", "柴油"];
+const phases: { value: DayPhase; label: string }[] = [
+  { value: "morning", label: PHASE_WINDOWS.morning.label },
+  { value: "afternoon", label: PHASE_WINDOWS.afternoon.label },
+  { value: "night", label: PHASE_WINDOWS.night.label }
+];
 
-const project = {
-  "number": 19,
-  "folder": "hxwl/frontend/hxwlfront-19",
-  "framework": "vue",
-  "title": "油品配送计划",
-  "subtitle": "创建配送单并在待发车、运输中、已到站之间流转。",
-  "industry": "石油",
-  "stack": [
-    "Vue3",
-    "Vite",
-    "TypeScript",
-    "Pinia",
-    "Element Plus"
-  ],
-  "storageKey": "hxwlfront-19-oil-delivery",
-  "formTitle": "创建配送单",
-  "primaryAction": "保存配送单",
-  "entityLabel": "配送单",
-  "statuses": [
-    "待发车",
-    "运输中",
-    "已到站"
-  ],
-  "filters": [
-    "全部油站",
-    "城东站",
-    "机场站",
-    "新区站"
-  ],
-  "fields": [
-    {
-      "key": "station",
-      "label": "目标油站",
-      "type": "select",
-      "options": [
-        "城东站",
-        "机场站",
-        "新区站"
-      ]
-    },
-    {
-      "key": "fuel",
-      "label": "油品",
-      "type": "select",
-      "options": [
-        "92号汽油",
-        "95号汽油",
-        "柴油"
-      ]
-    },
-    {
-      "key": "tons",
-      "label": "配送吨数",
-      "type": "number"
-    },
-    {
-      "key": "arriveAt",
-      "label": "计划到达",
-      "type": "date"
-    }
-  ],
-  "records": [
-    {
-      "station": "城东站",
-      "fuel": "92号汽油",
-      "tons": 18,
-      "arriveAt": "2026-07-01",
-      "status": "运输中",
-      "notes": "车辆已出库"
-    },
-    {
-      "station": "机场站",
-      "fuel": "柴油",
-      "tons": 12,
-      "arriveAt": "2026-07-01",
-      "status": "待发车",
-      "notes": "等待装车"
-    }
-  ],
-  "metricLabels": [
-    "配送单",
-    "运输中",
-    "总吨数"
-  ]
-} as const;
-
-const fields = project.fields as readonly Field[];
-const statuses = [...project.statuses];
-
-function createBlank() {
-  return Object.fromEntries(fields.map((field) => [field.key, field.type === "number" ? 0 : ""]));
+function defaultDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function loadRecords(): RecordItem[] {
-  const raw = localStorage.getItem(project.storageKey);
-  if (!raw) {
-    return project.records.map((record, index) => ({
-      ...record,
-      id: `seed-${index + 1}`,
-      createdAt: new Date(Date.now() - index * 86400000).toISOString()
-    })) as RecordItem[];
-  }
+const form = reactive({
+  station: stations[0],
+  fuel: fuels[0],
+  tons: 10,
+  arriveDate: defaultDate(),
+  phase: "morning" as DayPhase,
+  notes: ""
+});
+const submitting = ref(false);
+
+async function submitOrder() {
+  if (submitting.value) return;
+  submitting.value = true;
   try {
-    return JSON.parse(raw) as RecordItem[];
-  } catch {
-    return [];
+    const ok = await store.createOrder({ ...form });
+    if (ok) {
+      form.tons = 10;
+      form.notes = "";
+    }
+  } finally {
+    submitting.value = false;
   }
 }
 
-const records = ref<RecordItem[]>(loadRecords());
-const form = reactive<Record<string, string | number>>(createBlank());
-const note = ref("");
-const filter = ref(project.filters[0]);
+const stationFilter = ref("全部油站");
+const statusFilter = ref("全部状态");
+const stationOptions = ["全部油站", ...stations];
+const statusOptions = ["全部状态", ...ORDER_STATUSES];
 
-const filteredRecords = computed(() => {
-  if (filter.value.startsWith("全部")) return records.value;
-  return records.value.filter((record) => Object.values(record).includes(filter.value));
-});
+const filteredOrders = computed(() =>
+  store.orders.filter((order) => {
+    const stationOk = stationFilter.value.startsWith("全部") || order.station === stationFilter.value;
+    const statusOk = statusFilter.value.startsWith("全部") || order.status === statusFilter.value;
+    return stationOk && statusOk;
+  })
+);
 
+// 汇总跟随最新台账：预占与占用的排车吨数都计入
 const metrics = computed(() => {
-  const total = records.value.length;
-  const second = records.value.filter((record) => record.status === statuses[1]).length;
-  const third = records.value.filter((record) => record.status === statuses[2]).length;
-  const numberValues = records.value.flatMap((record) =>
-    fields.filter((field) => field.type === "number").map((field) => Number(record[field.key] || 0))
-  );
-  const sum = numberValues.reduce((acc, value) => acc + value, 0);
-  return [total, second || sum, third || Math.round(sum / Math.max(total, 1))];
+  const orders = store.orders;
+  const reserved = store.assignments.filter((a) => a.phase === "reserved").length;
+  const occupied = store.assignments.filter((a) => a.phase === "occupied").length;
+  const liveTons = store.assignments.filter(isLive).reduce((sum, a) => sum + a.tons, 0);
+  return [
+    { label: "配送单", value: orders.length },
+    { label: "待装车预占", value: reserved },
+    { label: "在途（已占用）", value: occupied },
+    { label: "占用/预占罐容", value: `${liveTons} 吨` }
+  ];
 });
 
-const chartRows = computed(() => statuses.map((status) => ({
-  status,
-  value: records.value.filter((record) => record.status === status).length
-})));
-
+const chartRows = computed(() =>
+  ORDER_STATUSES.map((status) => ({
+    status,
+    value: store.orders.filter((order) => order.status === status).length
+  }))
+);
 const maxChart = computed(() => Math.max(1, ...chartRows.value.map((row) => row.value)));
 
-function persist() {
-  localStorage.setItem(project.storageKey, JSON.stringify(records.value));
+function phaseLabel(phase: DayPhase) {
+  return PHASE_WINDOWS[phase].label;
 }
 
-function nextStatus(status: string) {
-  const index = statuses.indexOf(status);
-  return statuses[(index + 1) % statuses.length];
+function statusClass(status: OrderStatus) {
+  return {
+    待发车: "st-pending",
+    运输中: "st-transit",
+    已到站: "st-done",
+    已撤单: "st-cancel",
+    异常: "st-error"
+  }[status];
 }
 
-function primaryText(record: RecordItem) {
-  const first = fields[0];
-  const second = fields[1];
-  return [record[first.key], record[second.key]].filter(Boolean).join(" / ") || project.entityLabel;
+function hasLiveAssignment(orderId: string) {
+  const a = activeAssignmentOf(store.ledger, orderId);
+  return !!a && isLive(a);
 }
 
-function submit() {
-  records.value = [
-    {
-      ...form,
-      id: crypto.randomUUID(),
-      status: statuses[0],
-      notes: note.value || "暂无备注",
-      createdAt: new Date().toISOString()
-    } as RecordItem,
-    ...records.value
-  ];
-  Object.assign(form, createBlank());
-  note.value = "";
-  persist();
+function copySummary(orderId: string) {
+  const order = store.orders.find((o) => o.id === orderId);
+  if (!order) return;
+  const text = `${order.station} / ${order.fuel} / ${order.tons}吨 / ${order.arriveDate} ${phaseLabel(order.phase)}`;
+  navigator.clipboard?.writeText(text);
+  store.notify("info", "摘要已复制");
 }
 
-function flow(record: RecordItem) {
-  record.status = nextStatus(record.status);
-  persist();
-}
-
-function remove(id: string) {
-  records.value = records.value.filter((record) => record.id !== id);
-  persist();
+function confirmArrivalAction(orderId: string) {
+  const assignment = activeAssignmentOf(store.ledger, orderId);
+  if (assignment) store.confirmArrival(assignment.id, orderId);
+  else store.confirmArrival(undefined, orderId);
 }
 </script>
 
@@ -200,65 +120,126 @@ function remove(id: string) {
     <div class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">{{ project.industry }}行业前端最小闭环</p>
-          <h1>{{ project.title }}</h1>
-          <p class="subtitle">{{ project.subtitle }}</p>
+          <p class="eyebrow">石油行业 · 可恢复调度台</p>
+          <h1>油品配送调度台</h1>
+          <p class="subtitle">
+            派车先按计划到达时段预占车辆与罐容，装车后确认占用，撤单或在途失败即释放；
+            写入中断重开自动续做，旧台账只迁移一次。
+          </p>
         </div>
         <div class="stack">
-          <span v-for="item in project.stack" :key="item" class="tag">{{ item }}</span>
+          <span class="tag">Vue3</span>
+          <span class="tag">Pinia</span>
+          <span class="tag">原子台账 + 操作日志</span>
+          <span class="tag">Web Locks 跨窗口互斥</span>
         </div>
       </header>
 
+      <!-- 恢复 / 迁移 / 冲突等页面提示 -->
+      <div v-if="store.notices.length > 0" class="notices">
+        <div v-for="notice in store.notices" :key="notice.id" class="notice" :class="notice.level">
+          <span>{{ notice.text }}</span>
+          <button type="button" class="notice-close" @click="store.dismissNotice(notice.id)">×</button>
+        </div>
+      </div>
+
       <section class="metrics">
-        <article v-for="(label, index) in project.metricLabels" :key="label" class="metric">
-          <span>{{ label }}</span>
-          <strong>{{ metrics[index] }}</strong>
+        <article v-for="item in metrics" :key="item.label" class="metric">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
         </article>
       </section>
 
+      <FleetPanel />
+
+      <p v-if="store.lastChangeAt" class="sync-hint">
+        台账最近更新 {{ store.lastChangeAt }}（来源：{{ store.changeSource }}），列表与汇总已同步为最新占用
+      </p>
+
       <section class="workspace">
-        <form class="panel" @submit.prevent="submit">
-          <h2>{{ project.formTitle }}</h2>
+        <form class="panel" @submit.prevent="submitOrder">
+          <h2>创建配送单</h2>
           <div class="form-grid">
-            <label v-for="field in fields" :key="field.key">
-              {{ field.label }}
-              <select v-if="field.type === 'select'" v-model="form[field.key]" required>
-                <option value="">请选择</option>
-                <option v-for="option in field.options" :key="option">{{ option }}</option>
+            <label>
+              目标油站
+              <select v-model="form.station" required>
+                <option v-for="station in stations" :key="station" :value="station">{{ station }}</option>
               </select>
-              <input v-else v-model="form[field.key]" :type="field.type || 'text'" required />
+            </label>
+            <label>
+              油品
+              <select v-model="form.fuel" required>
+                <option v-for="fuel in fuels" :key="fuel" :value="fuel">{{ fuel }}</option>
+              </select>
+            </label>
+            <label>
+              配送吨数
+              <input v-model.number="form.tons" type="number" min="0.5" step="0.5" required />
+            </label>
+            <label>
+              计划到达日期
+              <input v-model="form.arriveDate" type="date" required />
+            </label>
+            <label>
+              到达时段
+              <select v-model="form.phase">
+                <option v-for="item in phases" :key="item.value" :value="item.value">
+                  {{ item.label }}（{{ PHASE_WINDOWS[item.value].startHour }}:00–{{ PHASE_WINDOWS[item.value].endHour === 24 ? "24:00" : PHASE_WINDOWS[item.value].endHour + ":00" }}）
+                </option>
+              </select>
             </label>
             <label>
               备注
-              <textarea v-model="note" placeholder="填写处理说明或现场备注" />
+              <textarea v-model="form.notes" placeholder="填写处理说明或现场备注" />
             </label>
-            <button type="submit">{{ project.primaryAction }}</button>
+            <button type="submit" :disabled="submitting">{{ submitting ? "提交中…" : "保存配送单" }}</button>
           </div>
         </form>
 
         <section class="list-panel">
           <div class="toolbar">
-            <h2>{{ project.entityLabel }}列表</h2>
-            <select v-model="filter">
-              <option v-for="item in project.filters" :key="item">{{ item }}</option>
-            </select>
+            <h2>配送单调度列表</h2>
+            <div class="filters">
+              <select v-model="stationFilter">
+                <option v-for="item in stationOptions" :key="item" :value="item">{{ item }}</option>
+              </select>
+              <select v-model="statusFilter">
+                <option v-for="item in statusOptions" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
           </div>
 
           <div class="record-grid">
-            <div v-if="filteredRecords.length === 0" class="empty">暂无匹配数据</div>
-            <article v-for="record in filteredRecords" :key="record.id" class="record">
+            <div v-if="filteredOrders.length === 0" class="empty">暂无匹配数据</div>
+            <article v-for="order in filteredOrders" :key="order.id" class="record">
               <div class="record-head">
-                <p class="record-title">{{ primaryText(record) }}</p>
-                <span class="status">{{ record.status }}</span>
+                <p class="record-title">{{ order.station }} / {{ order.fuel }}</p>
+                <span class="status" :class="statusClass(order.status)">{{ order.status }}</span>
               </div>
               <div class="details">
-                <span v-for="field in fields" :key="field.key">{{ field.label }}: {{ record[field.key] }}</span>
+                <span>配送吨数：{{ order.tons }} 吨</span>
+                <span>计划到达：{{ order.arriveDate }} {{ phaseLabel(order.phase) }}</span>
+                <span v-if="order.legacy" class="legacy-tag">旧台账迁移单</span>
               </div>
-              <p class="note">{{ record.notes }}</p>
+              <p class="note">{{ order.notes }}</p>
+
+              <!-- 待发车：嵌入可恢复的派车面板（草稿/预占/占用三态） -->
+              <DispatchEditor v-if="order.status === '待发车' || order.status === '运输中'" :order="order" />
+
               <div class="actions">
-                <button type="button" @click="flow(record)">流转状态</button>
-                <button class="secondary" type="button" @click="navigator.clipboard?.writeText(primaryText(record))">复制摘要</button>
-                <button class="danger" type="button" @click="remove(record.id)">删除</button>
+                <template v-if="order.status === '待发车'">
+                  <button type="button" class="secondary" @click="store.cancelOrder(order.id)">撤单并释放</button>
+                </template>
+                <template v-else-if="order.status === '运输中'">
+                  <button type="button" @click="confirmArrivalAction(order.id)">确认到站</button>
+                  <button type="button" class="danger" @click="store.failInTransit(order.id)">在途失败，释放占用</button>
+                </template>
+                <template v-else>
+                  <button type="button" class="danger" :disabled="hasLiveAssignment(order.id)" @click="store.deleteOrder(order.id)">
+                    删除配送单
+                  </button>
+                </template>
+                <button type="button" class="secondary" @click="copySummary(order.id)">复制摘要</button>
               </div>
             </article>
           </div>

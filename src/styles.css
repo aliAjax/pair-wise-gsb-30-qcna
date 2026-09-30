@@ -83,7 +83,7 @@ h1 {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -194,6 +194,12 @@ textarea {
   white-space: nowrap;
 }
 
+.status.st-pending { background: #fff5e0; color: #9a6200; }
+.status.st-transit { background: #e6f0ff; color: #1d55c4; }
+.status.st-done { background: #e8f4ef; color: #14724f; }
+.status.st-cancel { background: #eceff4; color: #69758c; }
+.status.st-error { background: #fde8e3; color: #b23a1f; }
+
 .details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -255,6 +261,242 @@ textarea {
   .app { padding: 18px; }
   .topbar, .workspace { grid-template-columns: 1fr; }
   .stack { justify-content: flex-start; }
-  .metrics { grid-template-columns: 1fr; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .details { grid-template-columns: 1fr; }
+}
+
+/* ---------- 调度台新增样式 ---------- */
+
+.notices {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid transparent;
+}
+
+.notice.info { background: #eef5fb; border-color: #cfe0f0; color: #234a6b; }
+.notice.success { background: #e9f6ef; border-color: #bfe4d0; color: #14724f; }
+.notice.warning { background: #fff5e0; border-color: #f0d79a; color: #8a5a00; }
+.notice.error { background: #fde8e3; border-color: #f0c1b4; color: #a8361c; }
+
+.notice-close {
+  background: transparent;
+  color: inherit;
+  padding: 2px 8px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sync-hint {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: #69758c;
+}
+
+/* 车队面板 */
+.fleet-panel {
+  background: #fff;
+  border: 1px solid #dfe7f1;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.fleet-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.fleet-head h2 { margin: 0; font-size: 20px; }
+.fleet-tip { font-size: 12px; color: #8a94a8; }
+
+.fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.truck-card {
+  border: 1px solid #dfe7f1;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.truck-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.plate {
+  margin-left: 8px;
+  color: #8a94a8;
+  font-size: 12px;
+}
+
+.truck-status {
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 12px;
+  background: #e8f4ef;
+  color: #14724f;
+  white-space: nowrap;
+}
+
+.truck-status.在途 { background: #e6f0ff; color: #1d55c4; }
+.truck-status.检修 { background: #fde8e3; color: #a8361c; }
+
+.truck-meta {
+  margin: 8px 0;
+  color: #536078;
+  font-size: 13px;
+}
+
+.truck-idle {
+  font-size: 13px;
+  color: #98a2b4;
+  padding: 6px 0;
+}
+
+.truck-live {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.truck-live li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 2px 8px;
+  align-items: center;
+  font-size: 13px;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 6px;
+  padding: 7px 9px;
+}
+
+.dot {
+  grid-row: span 2;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot.on { background: #1d55c4; }
+.dot.pre { background: #d9941a; }
+
+.live-main { font-weight: 600; color: #172033; }
+.live-tag { font-size: 12px; color: #8a94a8; }
+.live-time { grid-column: 2 / 4; font-size: 12px; color: #69758c; }
+
+/* 排车编辑器 */
+.dispatch {
+  border-top: 1px dashed #d5deeb;
+  padding-top: 12px;
+  margin-bottom: 12px;
+}
+
+.conflict-box {
+  background: #fff5e0;
+  border: 1px solid #f0d79a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #8a5a00;
+}
+
+.conflict-title { margin: 0 0 6px; font-weight: 700; }
+.conflict-box ul { margin: 4px 0 4px 18px; padding: 0; }
+.conflict-hint { margin: 6px 0 0; font-size: 12px; }
+
+.phase-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.phase-bar.reserved { background: #fff5e0; border: 1px solid #f0d79a; }
+.phase-bar.occupied { background: #e6f0ff; border: 1px solid #bfd4f5; }
+
+.phase-tag { margin-left: 8px; font-weight: 600; }
+.phase-time { display: block; margin-top: 4px; color: #5b667a; font-size: 12px; }
+.phase-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.phase-actions button { padding: 7px 10px; font-size: 13px; }
+
+.dispatch-form {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+}
+
+.capacity-line {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #14724f;
+}
+
+.capacity-line.tight { color: #b23a1f; font-weight: 600; }
+
+.preview-conflicts {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #a8361c;
+}
+
+.preview-conflicts li { margin-bottom: 3px; }
+
+.dispatch-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.dispatch-actions button { padding: 8px 12px; font-size: 13px; }
+
+.filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filters select { width: auto; padding: 8px 10px; }
+
+.legacy-tag {
+  color: #1d55c4;
+  font-size: 12px;
+  background: #e6f0ff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  justify-self: start;
+}
+
+@media (max-width: 860px) {
+  .fleet-grid { grid-template-columns: 1fr; }
+  .dispatch-form { grid-template-columns: 1fr; }
 }

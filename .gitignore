@@ -16,3 +16,6 @@ pnpm-debug.log*
 *.tsbuildinfo
 .idea/
 .vscode/
+
+# 本地测试临时产物
+.test-tmp/
